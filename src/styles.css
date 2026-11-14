@@ -1195,3 +1195,275 @@ h1 > span {
     transition: none !important;
   }
 }
+
+/* Mobile uses the library as its home screen; both views share one audio player. */
+.mini-player {
+  display: none;
+}
+.player-dialog {
+  border: 0;
+  padding: 0;
+  color: inherit;
+  background: #15121f;
+  width: 100%;
+  max-width: 480px;
+  max-height: 100dvh;
+  overscroll-behavior: contain;
+}
+.player-dialog::backdrop {
+  background: #080610cc;
+}
+.close-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  background: transparent;
+  padding: 8px 22px;
+  color: #c5b4df;
+  font-size: 13px;
+}
+@media (max-width: 740px) {
+  .app-shell {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .header {
+    height: 72px;
+  }
+  main {
+    padding-top: 26px;
+  }
+  .intro,
+  .desktop-player,
+  .footer {
+    display: none;
+  }
+  .workspace {
+    display: block;
+  }
+  .library-heading h2 {
+    font-size: 25px;
+  }
+  .library-heading p {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .library-heading > svg {
+    color: #a68ac8;
+  }
+  .library-toolbar {
+    gap: 12px;
+    margin-top: 20px;
+  }
+  .empty-toolbar {
+    display: none;
+  }
+  .search input {
+    font-size: 16px;
+  }
+  .search input::placeholder {
+    font-size: 12px;
+  }
+  .sort select {
+    min-height: 44px;
+  }
+  .empty-state {
+    min-height: min(430px, 65dvh);
+    padding: 25px 0;
+  }
+  .empty-state p {
+    font-size: 13px;
+    max-width: 300px;
+  }
+  .empty-state .button {
+    font-size: 13px;
+    padding: 0 20px;
+    min-height: 48px;
+  }
+  .empty-state .tiny-label {
+    font-size: 9px;
+  }
+  .formats {
+    font-size: 10px;
+  }
+  .local-note {
+    margin: 18px 0 24px;
+  }
+  .local-note strong {
+    font-size: 11px;
+  }
+  .local-note p {
+    font-size: 11px;
+  }
+  .track-text strong {
+    font-size: 14px;
+  }
+  .track-text > span {
+    font-size: 12px;
+  }
+  .track-duration {
+    font-size: 12px;
+  }
+  .track-cover {
+    width: 44px;
+    height: 44px;
+  }
+  .track-select {
+    min-height: 72px;
+  }
+  .has-track {
+    padding-bottom: calc(108px + env(safe-area-inset-bottom));
+  }
+  .mini-player {
+    position: fixed;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    left: 10px;
+    right: 10px;
+    bottom: 0;
+    padding: 9px 8px calc(12px + env(safe-area-inset-bottom));
+    background: #241b32;
+    border: 1px solid #b69bff30;
+    border-bottom: 0;
+    border-radius: 14px 14px 0 0;
+    box-shadow: 0 -8px 35px #0005;
+    z-index: 5;
+    overflow: hidden;
+  }
+  .mini-track {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    text-align: left;
+    padding: 3px;
+    background: transparent;
+  }
+  .mini-cover {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    color: #d6bfff;
+    background: linear-gradient(135deg, #725095, #403054);
+  }
+  .mini-track-text {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .mini-track-text strong,
+  .mini-track-text > span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mini-track-text strong {
+    font-size: 13px;
+    font-weight: 550;
+  }
+  .mini-track-text > span {
+    font-size: 11px;
+    color: #ac9dbb;
+  }
+  .mini-play {
+    color: #ceb2ff;
+  }
+  .mini-player .icon-button {
+    min-width: 44px;
+    min-height: 48px;
+  }
+  .mini-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #b69bff12;
+  }
+  .mini-progress > span {
+    display: block;
+    height: 100%;
+    background: #b69bff;
+  }
+  .player-dialog {
+    margin: auto;
+    width: 100%;
+    height: 100dvh;
+    max-width: 100%;
+    border-radius: 0;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .player-dialog .player-panel {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    padding: 0 24px;
+    overflow: visible;
+  }
+  .player-dialog .panel-heading {
+    margin: 5px 0 18px;
+  }
+  .player-dialog .artwork {
+    width: min(100%, 36dvh);
+    max-width: 340px;
+    aspect-ratio: 1;
+  }
+  .player-dialog .track-info {
+    padding: 21px 0 16px;
+    min-height: 0;
+  }
+  .player-dialog .track-info h2 {
+    font-size: 24px;
+    max-height: 2.6em;
+    overflow: auto;
+    line-height: 1.3;
+  }
+  .player-dialog .track-info p {
+    font-size: 14px;
+  }
+  .player-dialog .track-info .tiny-label {
+    display: none;
+  }
+  .player-dialog .timeline {
+    margin-top: 14px;
+  }
+  .player-dialog .timeline input {
+    height: 5px;
+    margin: 14px 0;
+  }
+  .player-dialog .timeline > div {
+    font-size: 12px;
+  }
+  .player-dialog .playback-controls {
+    padding: 20px 0;
+  }
+  .player-dialog .player-footer {
+    margin: 0;
+    padding: 14px 0;
+  }
+  .has-track .toast {
+    bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+}
+@media (max-width: 740px) and (max-height: 620px) {
+  .player-dialog .artwork {
+    width: min(100%, 27dvh);
+  }
+  .player-dialog .track-info {
+    padding: 12px 0 4px;
+  }
+  .player-dialog .playback-controls {
+    padding: 12px 0;
+  }
+  .player-dialog .player-footer {
+    display: none;
+  }
+}

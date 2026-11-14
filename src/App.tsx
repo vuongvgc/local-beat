@@ -46,6 +46,8 @@ export default function App() {
   const [install, setInstall] = useState<InstallPrompt | null>(null);
   const [update, setUpdate] = useState<(() => Promise<void>) | null>(null);
   const picker = useRef<HTMLInputElement>(null);
+  const playerDialog = useRef<HTMLDialogElement>(null);
+  const [playerOpen, setPlayerOpen] = useState(false);
   const importLock = useRef(false);
   const player = usePlayer(tracks, setNotice);
   const active = tracks.find((track) => track.id === player.current);
@@ -94,6 +96,31 @@ export default function App() {
       window.removeEventListener("beforeinstallprompt", prompt);
       window.removeEventListener("appinstalled", installed);
     };
+  }, []);
+  useEffect(() => {
+    const dialog = playerDialog.current;
+    if (!dialog) return;
+    if (playerOpen && active) {
+      dialog.showModal();
+      const previousOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        dialog.close();
+        document.body.style.overflow = previousOverflow;
+      };
+    }
+    dialog.close();
+  }, [playerOpen, Boolean(active)]);
+  useEffect(() => {
+    if (!active) setPlayerOpen(false);
+  }, [active]);
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 741px)");
+    const closeOnDesktop = () => {
+      if (desktop.matches) setPlayerOpen(false);
+    };
+    desktop.addEventListener("change", closeOnDesktop);
+    return () => desktop.removeEventListener("change", closeOnDesktop);
   }, []);
   async function importMusic(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
@@ -181,8 +208,135 @@ export default function App() {
       sort === "title" ? a.title.localeCompare(b.title) : b.added - a.added,
     );
   const addMusic = () => picker.current?.click();
+  const playerPanel = (
+    <section className="player-panel" aria-label="Music player">
+      <div className="panel-heading">
+        <span>
+          <span className="live-dot" /> NOW PLAYING
+        </span>
+        <Headphones size={17} />
+      </div>
+      <div className={`artwork ${player.playing ? "is-playing" : ""}`}>
+        <div className="artwork-grain" />
+        <span className="artwork-top">LOCALBEAT ORIGINALS</span>
+        <div className="vinyl">
+          <div className="vinyl-label">
+            <AudioLines size={37} />
+            <span>LB — 001</span>
+          </div>
+        </div>
+        <div className="artwork-bottom">
+          <span>
+            GOOD MUSIC.
+            <br />
+            NO DISTRACTIONS.
+          </span>
+          <ArrowUpRight size={26} />
+        </div>
+      </div>
+      <div className="track-info">
+        <span className="tiny-label">
+          {active ? "FROM YOUR LIBRARY" : "THE STAGE IS YOURS"}
+        </span>
+        <h2>{active?.title ?? "Find your rhythm"}</h2>
+        <p>{active?.artist ?? "Add a little music to your day"}</p>
+      </div>
+      <div className="timeline">
+        <input
+          aria-label="Seek playback"
+          type="range"
+          min="0"
+          max={player.duration || 0}
+          step="0.1"
+          value={Math.min(player.position, player.duration || 0)}
+          disabled={!active || !player.duration}
+          onChange={(e) => player.seek(Number(e.target.value))}
+          style={
+            {
+              "--progress": `${player.duration ? (player.position / player.duration) * 100 : 0}%`,
+            } as React.CSSProperties
+          }
+        />
+        <div>
+          <span>{formatTime(player.position)}</span>
+          <span>{formatTime(player.duration)}</span>
+        </div>
+      </div>
+      <div className="playback-controls">
+        <button
+          className={`icon-button mode ${player.shuffle ? "active" : ""}`}
+          aria-label="Shuffle"
+          aria-pressed={player.shuffle}
+          onClick={() => player.setShuffle(!player.shuffle)}
+        >
+          <Shuffle size={20} />
+        </button>
+        <button
+          className="icon-button"
+          aria-label="Previous track"
+          disabled={!active}
+          onClick={player.previous}
+        >
+          <SkipBack size={23} fill="currentColor" />
+        </button>
+        <button
+          className="play-button"
+          aria-label={player.playing ? "Pause" : "Play"}
+          disabled={!tracks.length}
+          onClick={player.toggle}
+        >
+          {player.playing ? (
+            <Pause size={28} fill="currentColor" />
+          ) : (
+            <Play size={28} fill="currentColor" />
+          )}
+        </button>
+        <button
+          className="icon-button"
+          aria-label="Next track"
+          disabled={!active}
+          onClick={player.next}
+        >
+          <SkipForward size={23} fill="currentColor" />
+        </button>
+        <button
+          className={`icon-button mode ${player.repeat !== "off" ? "active" : ""}`}
+          aria-label={`Repeat: ${player.repeat}`}
+          title={`Repeat: ${player.repeat}`}
+          onClick={() =>
+            player.setRepeat(
+              player.repeat === "off"
+                ? "all"
+                : player.repeat === "all"
+                  ? "one"
+                  : "off",
+            )
+          }
+        >
+          {player.repeat === "one" ? (
+            <Repeat1 size={21} />
+          ) : (
+            <Repeat size={21} />
+          )}
+        </button>
+      </div>
+      <div className="player-footer">
+        <span className={player.playing ? "equalizer playing" : "equalizer"}>
+          <i />
+          <i />
+          <i />
+          <i />
+        </span>
+        {player.playing
+          ? "Just you and the music"
+          : active
+            ? "Ready when you are"
+            : "A little quiet, for now"}
+      </div>
+    </section>
+  );
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${active ? "has-track" : ""}`}>
       <header className="header">
         <a
           className="brand"
@@ -258,133 +412,7 @@ export default function App() {
           </div>
         </section>
         <div className="workspace">
-          <section className="player-panel" aria-label="Music player">
-            <div className="panel-heading">
-              <span>
-                <span className="live-dot" /> NOW PLAYING
-              </span>
-              <Headphones size={17} />
-            </div>
-            <div className={`artwork ${player.playing ? "is-playing" : ""}`}>
-              <div className="artwork-grain" />
-              <span className="artwork-top">LOCALBEAT ORIGINALS</span>
-              <div className="vinyl">
-                <div className="vinyl-label">
-                  <AudioLines size={37} />
-                  <span>LB — 001</span>
-                </div>
-              </div>
-              <div className="artwork-bottom">
-                <span>
-                  GOOD MUSIC.
-                  <br />
-                  NO DISTRACTIONS.
-                </span>
-                <ArrowUpRight size={26} />
-              </div>
-            </div>
-            <div className="track-info">
-              <span className="tiny-label">
-                {active ? "FROM YOUR LIBRARY" : "THE STAGE IS YOURS"}
-              </span>
-              <h2>{active?.title ?? "Find your rhythm"}</h2>
-              <p>{active?.artist ?? "Add a little music to your day"}</p>
-            </div>
-            <div className="timeline">
-              <input
-                aria-label="Seek playback"
-                type="range"
-                min="0"
-                max={player.duration || 0}
-                step="0.1"
-                value={Math.min(player.position, player.duration || 0)}
-                disabled={!active || !player.duration}
-                onChange={(e) => player.seek(Number(e.target.value))}
-                style={
-                  {
-                    "--progress": `${player.duration ? (player.position / player.duration) * 100 : 0}%`,
-                  } as React.CSSProperties
-                }
-              />
-              <div>
-                <span>{formatTime(player.position)}</span>
-                <span>{formatTime(player.duration)}</span>
-              </div>
-            </div>
-            <div className="playback-controls">
-              <button
-                className={`icon-button mode ${player.shuffle ? "active" : ""}`}
-                aria-label="Shuffle"
-                aria-pressed={player.shuffle}
-                onClick={() => player.setShuffle(!player.shuffle)}
-              >
-                <Shuffle size={20} />
-              </button>
-              <button
-                className="icon-button"
-                aria-label="Previous track"
-                disabled={!active}
-                onClick={player.previous}
-              >
-                <SkipBack size={23} fill="currentColor" />
-              </button>
-              <button
-                className="play-button"
-                aria-label={player.playing ? "Pause" : "Play"}
-                disabled={!tracks.length}
-                onClick={player.toggle}
-              >
-                {player.playing ? (
-                  <Pause size={28} fill="currentColor" />
-                ) : (
-                  <Play size={28} fill="currentColor" />
-                )}
-              </button>
-              <button
-                className="icon-button"
-                aria-label="Next track"
-                disabled={!active}
-                onClick={player.next}
-              >
-                <SkipForward size={23} fill="currentColor" />
-              </button>
-              <button
-                className={`icon-button mode ${player.repeat !== "off" ? "active" : ""}`}
-                aria-label={`Repeat: ${player.repeat}`}
-                title={`Repeat: ${player.repeat}`}
-                onClick={() =>
-                  player.setRepeat(
-                    player.repeat === "off"
-                      ? "all"
-                      : player.repeat === "all"
-                        ? "one"
-                        : "off",
-                  )
-                }
-              >
-                {player.repeat === "one" ? (
-                  <Repeat1 size={21} />
-                ) : (
-                  <Repeat size={21} />
-                )}
-              </button>
-            </div>
-            <div className="player-footer">
-              <span
-                className={player.playing ? "equalizer playing" : "equalizer"}
-              >
-                <i />
-                <i />
-                <i />
-                <i />
-              </span>
-              {player.playing
-                ? "Just you and the music"
-                : active
-                  ? "Ready when you are"
-                  : "A little quiet, for now"}
-            </div>
-          </section>
+          <div className="desktop-player">{playerPanel}</div>
           <section className="library-panel" aria-label="Music library">
             <div className="library-heading">
               <div>
@@ -395,7 +423,9 @@ export default function App() {
               </div>
               <ListMusic size={22} />
             </div>
-            <div className="library-toolbar">
+            <div
+              className={`library-toolbar ${!tracks.length ? "empty-toolbar" : ""}`}
+            >
               <label className="search">
                 <Search size={17} />
                 <input
@@ -551,6 +581,65 @@ export default function App() {
           <span>Less noise. More you.</span>
         </footer>
       </main>
+      {active && (
+        <nav className="mini-player" aria-label="Playback controls">
+          <button
+            className="mini-track"
+            onClick={() => setPlayerOpen(true)}
+            aria-label={`Open player: ${active.title}`}
+            aria-haspopup="dialog"
+          >
+            <span className="mini-cover">
+              <AudioLines size={22} />
+            </span>
+            <span className="mini-track-text">
+              <strong>{active.title}</strong>
+              <span>{active.artist}</span>
+            </span>
+          </button>
+          <button
+            className="mini-play icon-button"
+            onClick={player.toggle}
+            aria-label={player.playing ? "Pause" : "Play"}
+          >
+            {player.playing ? (
+              <Pause size={23} fill="currentColor" />
+            ) : (
+              <Play size={23} fill="currentColor" />
+            )}
+          </button>
+          <button
+            className="icon-button"
+            onClick={player.next}
+            aria-label="Next track"
+          >
+            <SkipForward size={22} fill="currentColor" />
+          </button>
+          <div className="mini-progress" aria-hidden="true">
+            <span
+              style={{
+                width: `${player.duration ? (player.position / player.duration) * 100 : 0}%`,
+              }}
+            />
+          </div>
+        </nav>
+      )}
+      <dialog
+        ref={playerDialog}
+        className="player-dialog"
+        aria-label="Now playing"
+        onClose={() => setPlayerOpen(false)}
+      >
+        <button
+          className="close-player"
+          onClick={() => setPlayerOpen(false)}
+          autoFocus
+        >
+          <ChevronDown size={22} />
+          <span>Back to library</span>
+        </button>
+        {playerPanel}
+      </dialog>
       {notice && (
         <div className="toast" role="status">
           <Music2 size={18} />
