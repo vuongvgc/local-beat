@@ -4,6 +4,7 @@ A small, private offline music player for your own files. React + TypeScript + V
 
 - Multi-file import, duplicate detection (filename + size + last modified), search and sorting.
 - Play, pause, seek, previous/next, shuffle and repeat off/all/one.
+- Sleep timer: pause after 15, 30, 45 or 60 minutes, with a live countdown and cancellation in the desktop or mobile player. Choosing another duration restarts the timer. It keeps counting through pauses and track changes; reloading clears it.
 - Restores your library, selected track and modes without autoplay.
 - Media Session controls for compatible lock screens, notifications and Bluetooth headsets.
 - Installable PWA with a precached app shell. Audio stays in IndexedDB, separate from service worker caches.
@@ -41,6 +42,8 @@ Offline refresh works after the service worker has installed and taken control (
 Audio format support depends on the browser and codec, not just the extension. Invalid files are skipped; decode failures advance to another track, stopping when every track fails. Titles/artists are inferred from `Artist - Title.ext`; embedded ID3 tags and cover art are not parsed. Shuffle chooses another track each time; it is not a precomputed queue. Previous restarts a track after three seconds; otherwise it selects the previous track.
 
 Background playback uses standard HTMLAudioElement and Media Session APIs. It cannot be guaranteed on every Android device: battery optimization, memory pressure, force closing, browser policies and Bluetooth behavior can interrupt playback. Service workers do not play or keep audio alive. No CPU/wake-lock hacks are used.
+
+The sleep timer uses a wall-clock deadline and checks again on audio events and when the app becomes visible. If the operating system suspends the browser, JavaScript cannot guarantee an exact stop time; an overdue timer pauses playback as soon as the app can run again.
 
 ## Verification
 

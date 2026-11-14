@@ -20,6 +20,10 @@ export function usePlayer(tracks: Track[], report: (message: string) => void) {
   const [playing, setPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [sleepRemaining, setSleepRemaining] = useState<number | null>(null);
+  const [sleepDeadline, setSleepDeadline] = useState<number | null>(null);
+  const sleepUntil = useRef<number | null>(null);
+  const sleepStopped = useRef(false);
   const [shuffle, setShuffle] = useState(initial.shuffle === true);
   const [repeat, setRepeat] = useState<Repeat>(
     ["off", "all", "one"].includes(initial.repeat ?? "")
@@ -31,6 +35,29 @@ export function usePlayer(tracks: Track[], report: (message: string) => void) {
   const failed = useRef(new Set<string>());
   const state = useRef({ tracks, current, shuffle, repeat, report });
   state.current = { tracks, current, shuffle, repeat, report };
+
+  function checkSleepTimer() {
+    const deadline = sleepUntil.current;
+    if (deadline === null) return false;
+    const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+    if (remaining > 0) {
+      setSleepRemaining(remaining);
+      return false;
+    }
+    sleepUntil.current = null;
+    setSleepDeadline(null);
+    setSleepRemaining(null);
+    sleepStopped.current = true;
+    audio.pause();
+    state.current.report("Sleep timer ended. Playback paused.");
+    return true;
+  }
+  function setSleepTimer(minutes: number | null) {
+    const deadline = minutes === null ? null : Date.now() + minutes * 60_000;
+    sleepUntil.current = deadline;
+    setSleepDeadline(deadline);
+    setSleepRemaining(minutes === null ? null : minutes * 60);
+  }
 
   function load(id: string) {
     const track = state.current.tracks.find((item) => item.id === id);
@@ -64,6 +91,8 @@ export function usePlayer(tracks: Track[], report: (message: string) => void) {
     return true;
   }
   async function play() {
+    if (checkSleepTimer()) return;
+    sleepStopped.current = false;
     try {
       await audio.play();
     } catch (error) {
@@ -80,6 +109,8 @@ export function usePlayer(tracks: Track[], report: (message: string) => void) {
     if (load(id)) void play();
   }
   function move(direction: 1 | -1, ended = false) {
+    if (checkSleepTimer()) return;
+    if (ended && sleepStopped.current) return;
     const s = state.current;
     if (direction === -1 && audio.currentTime > 3) {
       audio.currentTime = 0;
@@ -113,11 +144,28 @@ export function usePlayer(tracks: Track[], report: (message: string) => void) {
       setPosition(audio.currentTime);
     }
   }
-  const actions = useRef({ move, toggle, play, seek, load });
-  actions.current = { move, toggle, play, seek, load };
+  const actions = useRef({ move, toggle, play, seek, load, checkSleepTimer });
+  actions.current = { move, toggle, play, seek, load, checkSleepTimer };
+
+  useEffect(() => {
+    if (sleepDeadline === null) return;
+    const check = () => actions.current.checkSleepTimer();
+    // Use a deadline so throttled background ticks never extend the timer.
+    const timeout = window.setTimeout(check, Math.max(0, sleepDeadline - Date.now()));
+    const interval = window.setInterval(check, 1000);
+    document.addEventListener("visibilitychange", check);
+    window.addEventListener("pageshow", check);
+    return () => {
+      window.clearTimeout(timeout);
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", check);
+      window.removeEventListener("pageshow", check);
+    };
+  }, [sleepDeadline]);
 
   useEffect(() => {
     const updatePosition = () => {
+      actions.current.checkSleepTimer();
       setPosition(audio.currentTime);
       if (
         "mediaSession" in navigator &&
@@ -140,6 +188,8 @@ export function usePlayer(tracks: Track[], report: (message: string) => void) {
       updatePosition();
     };
     const playback = () => {
+      actions.current.checkSleepTimer();
+      if (sleepStopped.current && !audio.paused) audio.pause();
       setPlaying(!audio.paused);
       if ("mediaSession" in navigator)
         navigator.mediaSession.playbackState = audio.paused
@@ -148,6 +198,7 @@ export function usePlayer(tracks: Track[], report: (message: string) => void) {
     };
     const ended = () => actions.current.move(1, true);
     const error = () => {
+      if (actions.current.checkSleepTimer() || sleepStopped.current) return;
       if (selected.current) failed.current.add(selected.current);
       state.current.report(
         "This track cannot be played. Trying the next available track.",
@@ -275,6 +326,8 @@ export function usePlayer(tracks: Track[], report: (message: string) => void) {
     duration,
     shuffle,
     repeat,
+    sleepRemaining,
+    setSleepTimer,
     setShuffle,
     setRepeat,
     select,

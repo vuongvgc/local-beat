@@ -458,6 +458,74 @@ h1 > span {
 .play-button svg:has(polygon) {
   margin-left: 3px;
 }
+.sleep-timer {
+  padding: 16px 0 18px;
+  border-top: 1px solid var(--border);
+}
+.sleep-timer-heading,
+.sleep-timer-heading > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sleep-timer-heading {
+  justify-content: space-between;
+  font-size: 12px;
+  color: #c7bdd4;
+}
+.sleep-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.sleep-countdown[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+.sleep-timer.is-active .sleep-timer-heading {
+  color: var(--primary);
+}
+.sleep-timer.is-active .sleep-countdown {
+  color: var(--primary);
+}
+.sleep-timer p {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 9px 0 12px;
+}
+.sleep-timer-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+.sleep-timer-options button {
+  min-height: 44px;
+  padding: 6px;
+  border: 1px solid #b69bff20;
+  border-radius: 8px;
+  background: #b69bff0a;
+  color: #c7b4e3;
+  font-size: 11px;
+}
+.sleep-cancel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 8px;
+  background: transparent;
+  color: var(--primary);
+  font-size: 11px;
+  border-radius: 8px;
+}
 .player-footer {
   border-top: 1px solid var(--border);
   margin: 0 -25px;

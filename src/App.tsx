@@ -10,6 +10,7 @@ import {
   ListMusic,
   LoaderCircle,
   Music2,
+  Moon,
   Pause,
   Play,
   Plus,
@@ -48,6 +49,7 @@ export default function App() {
   const picker = useRef<HTMLInputElement>(null);
   const playerDialog = useRef<HTMLDialogElement>(null);
   const [playerOpen, setPlayerOpen] = useState(false);
+  const [sleepConfigOpen, setSleepConfigOpen] = useState(false);
   const importLock = useRef(false);
   const player = usePlayer(tracks, setNotice);
   const active = tracks.find((track) => track.id === player.current);
@@ -319,6 +321,52 @@ export default function App() {
             <Repeat size={21} />
           )}
         </button>
+      </div>
+      <div className={`sleep-timer ${player.sleepRemaining !== null ? "is-active" : ""}`}>
+        <div className="sleep-timer-heading">
+          <span><Moon size={16} /> Sleep timer</span>
+          <button
+            className="sleep-countdown"
+            aria-label="Configure sleep timer"
+            aria-expanded={sleepConfigOpen}
+            onClick={() => setSleepConfigOpen(!sleepConfigOpen)}
+          >
+            {player.sleepRemaining === null ? "Off" : formatTime(player.sleepRemaining)}
+            <ChevronDown size={14} />
+          </button>
+        </div>
+        {sleepConfigOpen && (
+          <>
+            <p>
+              {player.sleepRemaining === null
+                ? "Drift off. We’ll pause the music for you."
+                : "Music will pause when the timer ends."}
+            </p>
+            <div className="sleep-timer-options" role="group" aria-label="Sleep timer duration">
+              {[15, 30, 45, 60].map((minutes) => (
+                <button
+                  key={minutes}
+                  disabled={!active}
+                  aria-label={`Set sleep timer for ${minutes} minutes`}
+                  onClick={() => {
+                    player.setSleepTimer(minutes);
+                    setSleepConfigOpen(false);
+                  }}
+                >
+                  {minutes} min
+                </button>
+              ))}
+            </div>
+            {player.sleepRemaining !== null && (
+              <button className="sleep-cancel" onClick={() => {
+                player.setSleepTimer(null);
+                setSleepConfigOpen(false);
+              }}>
+                <X size={14} /> Cancel timer
+              </button>
+            )}
+          </>
+        )}
       </div>
       <div className="player-footer">
         <span className={player.playing ? "equalizer playing" : "equalizer"}>
