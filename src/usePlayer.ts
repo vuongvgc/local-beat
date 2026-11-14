@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { nextTrack, type Repeat, type Track } from "./music";
+export const playbackSpeeds = [0.75, 1, 1.25, 1.5, 1.75, 2] as const;
+export type PlaybackMode = "music" | "learning";
 function saved() {
   try {
     return JSON.parse(localStorage.getItem("localbeat-player") ?? "{}") as {
       current?: string;
       shuffle?: boolean;
       repeat?: Repeat;
+      playbackMode?: PlaybackMode;
+      learningSpeed?: number;
     };
   } catch {
     return {};
@@ -20,6 +24,13 @@ export function usePlayer(tracks: Track[], report: (message: string) => void) {
   const [playing, setPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [playbackMode, setPlaybackMode] = useState<PlaybackMode>(
+    initial.playbackMode === "learning" ? "learning" : "music",
+  );
+  const [learningSpeed, setLearningSpeed] = useState(
+    playbackSpeeds.find((speed) => speed === initial.learningSpeed) ?? 1,
+  );
+  const playbackSpeed = playbackMode === "learning" ? learningSpeed : 1;
   const [sleepRemaining, setSleepRemaining] = useState<number | null>(null);
   const [sleepDeadline, setSleepDeadline] = useState<number | null>(null);
   const sleepUntil = useRef<number | null>(null);
@@ -68,6 +79,7 @@ export function usePlayer(tracks: Track[], report: (message: string) => void) {
     selected.current = id;
     state.current.current = id;
     audio.src = url.current;
+    audio.playbackRate = audio.defaultPlaybackRate;
     setCurrent(id);
     setPosition(0);
     setDuration(track.duration || 0);
@@ -148,6 +160,19 @@ export function usePlayer(tracks: Track[], report: (message: string) => void) {
   actions.current = { move, toggle, play, seek, load, checkSleepTimer };
 
   useEffect(() => {
+    // defaultPlaybackRate also keeps the chosen speed when a new source loads.
+    audio.defaultPlaybackRate = playbackSpeed;
+    audio.playbackRate = playbackSpeed;
+    const pitchAudio = audio as HTMLAudioElement & {
+      mozPreservesPitch?: boolean;
+      webkitPreservesPitch?: boolean;
+    };
+    if ("preservesPitch" in audio) audio.preservesPitch = true;
+    else if ("mozPreservesPitch" in pitchAudio) pitchAudio.mozPreservesPitch = true;
+    else if ("webkitPreservesPitch" in pitchAudio) pitchAudio.webkitPreservesPitch = true;
+  }, [audio, playbackSpeed]);
+
+  useEffect(() => {
     if (sleepDeadline === null) return;
     const check = () => actions.current.checkSleepTimer();
     // Use a deadline so throttled background ticks never extend the timer.
@@ -219,6 +244,7 @@ export function usePlayer(tracks: Track[], report: (message: string) => void) {
       ["timeupdate", updatePosition],
       ["loadedmetadata", metadata],
       ["durationchange", metadata],
+      ["ratechange", updatePosition],
       ["play", playback],
       ["pause", playback],
       ["ended", ended],
@@ -313,12 +339,12 @@ export function usePlayer(tracks: Track[], report: (message: string) => void) {
     try {
       localStorage.setItem(
         "localbeat-player",
-        JSON.stringify({ current, shuffle, repeat }),
+        JSON.stringify({ current, shuffle, repeat, playbackMode, learningSpeed }),
       );
     } catch {
       /* Playback still works with storage disabled. */
     }
-  }, [current, shuffle, repeat]);
+  }, [current, shuffle, repeat, playbackMode, learningSpeed]);
   return {
     current,
     playing,
@@ -326,6 +352,10 @@ export function usePlayer(tracks: Track[], report: (message: string) => void) {
     duration,
     shuffle,
     repeat,
+    playbackMode,
+    setPlaybackMode,
+    playbackSpeed,
+    setLearningSpeed,
     sleepRemaining,
     setSleepTimer,
     setShuffle,

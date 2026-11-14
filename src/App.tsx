@@ -29,7 +29,7 @@ import { registerSW } from "virtual:pwa-register";
 import { fileIdentity, fileLabels, formatTime, type Track } from "./music";
 import { musicStorage } from "./storage";
 import { readDuration } from "./audioMetadata";
-import { usePlayer } from "./usePlayer";
+import { playbackSpeeds, usePlayer } from "./usePlayer";
 
 type InstallPrompt = Event & {
   prompt: () => Promise<void>;
@@ -321,6 +321,39 @@ export default function App() {
             <Repeat size={21} />
           )}
         </button>
+      </div>
+      <div className="listening-settings">
+        <div className="listening-modes" role="group" aria-label="Listening mode">
+          <button
+            aria-pressed={player.playbackMode === "music"}
+            onClick={() => player.setPlaybackMode("music")}
+          >
+            <Music2 size={15} /> Music Mode
+          </button>
+          <button
+            aria-pressed={player.playbackMode === "learning"}
+            onClick={() => player.setPlaybackMode("learning")}
+          >
+            <Headphones size={15} /> Learning Mode
+          </button>
+        </div>
+        {player.playbackMode === "learning" && (
+          <label className="playback-speed">
+            <span>Playback speed</span>
+            <select
+              aria-label="Playback speed"
+              value={player.playbackSpeed}
+              onChange={(event) => {
+                const speed = playbackSpeeds.find((value) => value === Number(event.target.value));
+                if (speed !== undefined) player.setLearningSpeed(speed);
+              }}
+            >
+              {playbackSpeeds.map((speed) => (
+                <option key={speed} value={speed}>{speed}×</option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
       <div className={`sleep-timer ${player.sleepRemaining !== null ? "is-active" : ""}`}>
         <div className="sleep-timer-heading">

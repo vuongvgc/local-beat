@@ -458,6 +458,50 @@ h1 > span {
 .play-button svg:has(polygon) {
   margin-left: 3px;
 }
+.listening-settings {
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+}
+.listening-modes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+.listening-modes button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 6px;
+  border: 1px solid #b69bff20;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+}
+.listening-modes button[aria-pressed="true"] {
+  color: var(--primary);
+  background: #b69bff0a;
+  border-color: #b69bff55;
+}
+.playback-speed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  color: #c7bdd4;
+  font-size: 12px;
+}
+.playback-speed select {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid #b69bff30;
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--primary);
+}
 .sleep-timer {
   padding: 16px 0 18px;
   border-top: 1px solid var(--border);

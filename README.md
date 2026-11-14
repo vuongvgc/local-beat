@@ -4,6 +4,7 @@ A small, private offline music player for your own files. React + TypeScript + V
 
 - Multi-file import, duplicate detection (filename + size + last modified), search and sorting.
 - Play, pause, seek, previous/next, shuffle and repeat off/all/one.
+- Music Mode plays at 1×. Learning Mode offers 0.75×, 1×, 1.25×, 1.5×, 1.75× and 2×, applied immediately without restarting playback. The selected mode and Learning speed are saved on this device; returning to Learning restores that speed. Voice pitch is preserved where the browser supports it.
 - Sleep timer: pause after 15, 30, 45 or 60 minutes, with a live countdown and cancellation in the desktop or mobile player. Choosing another duration restarts the timer. It keeps counting through pauses and track changes; reloading clears it.
 - Restores your library, selected track and modes without autoplay.
 - Media Session controls for compatible lock screens, notifications and Bluetooth headsets.
